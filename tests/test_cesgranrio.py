@@ -324,28 +324,10 @@ class TestColetar(unittest.TestCase):
         for p in patches:
             p.stop()
 
-    def test_encerrado_nao_entra_no_resultado(self):
-        ps = self._apply(self._patch_coletar(lambda u: (
-            LISTING_HTML if "ucat=27" in u else DETALHE_TRANSPETRO
-        ), encerrado_side=True))
-        try:
-            import rastrear
-            novos = rastrear.coletar()
-            self.assertEqual(novos, [])
-        finally:
-            self._stop(ps)
-
-    def test_aberto_entra_no_resultado(self):
-        ps = self._apply(self._patch_coletar(lambda u: (
-            LISTING_HTML if "ucat=27" in u else DETALHE_FUTURO
-        ), encerrado_side=False))
-        try:
-            import rastrear
-            novos = rastrear.coletar()
-            self.assertEqual(len(novos), 2)
-            self.assertTrue(all(r["status"] == "ok" for r in novos))
-        finally:
-            self._stop(ps)
+    def test_sem_fonte_ativa_retorna_vazio(self):
+        # Cesgranrio desativada — coletar() deve retornar [] sem erros
+        import rastrear
+        self.assertEqual(rastrear.coletar(), [])
 
     def test_data_ilegivel_descarta(self):
         ps = self._apply(self._patch_coletar(lambda u: (
@@ -392,18 +374,6 @@ class TestColetar(unittest.TestCase):
                 self.assertEqual(novos, [])
         self._stop(ps)
 
-    def test_resultado_tem_id_e_data_br(self):
-        ps = self._apply(self._patch_coletar(lambda u: (
-            LISTING_HTML if "ucat=27" in u else DETALHE_FUTURO
-        ), encerrado_side=False))
-        try:
-            import rastrear
-            novos = rastrear.coletar()
-            for r in novos:
-                self.assertIn("id", r)
-                self.assertRegex(r["data_coleta"], r"\d{2}/\d{2}/\d{4}")
-        finally:
-            self._stop(ps)
 
     def test_falha_na_listagem_retorna_vazio(self):
         with patch("rastrear._get", side_effect=Exception("timeout")), \

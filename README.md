@@ -12,14 +12,13 @@ Rastreador de editais de concursos públicos com inscrições abertas. Coleta da
 
 ## Fontes habilitadas
 
-| Banca | Portal | Categoria coletada |
-|-------|--------|-------------------|
-| Cesgranrio | cesgranrio.org.br | Inscrições abertas (grid-cat-27) |
+Nenhuma fonte ativa no momento — ver seção abaixo.
 
 ## Fontes fora do escopo
 
 | Banca | Motivo |
 |-------|--------|
+| Cesgranrio | O servidor retorna HTTP 401/403 para `/robots.txt` quando acessado pelos IPs do GitHub Actions. O Python trata 401/403 como "disallow all" per RFC 9309 §2.3.1.3. O rastreador respeita esse sinal e não coleta. A coleta funciona de IPs residenciais (robots.txt retorna 404 → permitido), mas não no ambiente de CI. |
 | FCC | `robots.txt`: `Disallow: /concursos/` |
 
 ## Regras de educação do rastreador

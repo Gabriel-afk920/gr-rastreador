@@ -22,13 +22,13 @@ from urllib.robotparser import RobotFileParser
 
 import requests
 
-from collectors.cesgranrio import (
-    LISTING_URL,
-    parse_listing,
-    parse_detalhe,
-    _inscricoes_encerradas,
-    _formatar_data_br,
-)
+# Cesgranrio desativado: o servidor retorna HTTP 401/403 para /robots.txt
+# quando acessado pelos IPs do GitHub Actions. Python trata 401/403 como
+# "disallow all" (RFC 9309 §2.3.1.3). O rastreador respeita esse sinal.
+# from collectors.cesgranrio import (
+#     LISTING_URL, parse_listing, parse_detalhe,
+#     _inscricoes_encerradas, _formatar_data_br,
+# )
 
 ROOT        = Path(__file__).parent
 SAIDA_DIR   = ROOT / "saida"
@@ -130,71 +130,17 @@ def _salvar_resultados(resultados: list[dict]) -> None:
 
 def coletar() -> list[dict]:
     """
-    Coleta novidades de concursos da Cesgranrio.
-    Retorna apenas os registros novos coletados nesta execução.
+    Retorna lista de novos concursos coletados nesta execução.
+    Nenhuma fonte habilitada no momento — ver README.
     """
     global _inicio
     _inicio = time.monotonic()
 
-    vistos     = _ler_vistos()
-    anteriores = _ler_resultados()
-    novos: list[dict] = []
-
-    try:
-        html_listagem = _get(LISTING_URL)
-    except Exception as exc:
-        log.error("falha ao buscar listagem: %s", exc)
-        return []
-
-    urls = parse_listing(html_listagem)
-    log.info("Cesgranrio: %d concurso(s) na listagem", len(urls))
-
-    for url in urls:
-        if not _dentro_do_budget():
-            log.warning("budget esgotado")
-            break
-
-        h = _hash_url(url)
-        if h in vistos:
-            log.info("já visto: %s", url)
-            continue
-
-        try:
-            html_detalhe = _get(url)
-            reg = parse_detalhe(html_detalhe, url)
-        except PermissionError as exc:
-            log.warning("%s", exc)
-            vistos.add(h)
-            continue
-        except Exception as exc:
-            log.error("erro ao coletar %s: %s", url, exc)
-            vistos.add(h)
-            continue
-
-        vistos.add(h)
-
-        if reg is None:
-            log.warning("campos insuficientes, descartando: %s", url)
-            continue
-
-        encerrado = _inscricoes_encerradas(reg["inscricoes"])
-        if encerrado is None:
-            log.warning("data de inscrição ilegível, descartando: %s", url)
-            continue
-        if encerrado:
-            log.info("inscrições encerradas (%s): %s", reg["inscricoes"], url)
-            continue
-
-        reg["id"]          = h
-        reg["data_coleta"] = _formatar_data_br(reg["data_coleta"])
-        novos.append(reg)
-        log.info("novo: %s — %s vagas — inscrições %s", reg["orgao"],
-                 reg["vagas"], reg["inscricoes"])
-
-    _salvar_resultados(anteriores + novos)
-    _salvar_vistos(vistos)
-    log.info("coletar: %d novo(s), %d total", len(novos), len(anteriores) + len(novos))
-    return novos
+    log.warning(
+        "nenhuma fonte habilitada: Cesgranrio desativada (HTTP 401/403 em robots.txt "
+        "nos runners do GitHub Actions — ver README)"
+    )
+    return []
 
 
 if __name__ == "__main__":
